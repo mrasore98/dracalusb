@@ -1,7 +1,7 @@
 import logging
 import shlex
 import subprocess
-from enum import StrEnum, IntEnum
+from enum import StrEnum
 from pathlib import Path
 
 
@@ -93,7 +93,7 @@ class DracalCmdBuilder:
 
     # *** DATA SELECTION ***
     @builder_method
-    def use_sensor(self, serial_number: str) -> None:
+    def use_sensor(self, serial_number: str) -> "DracalCmdBuilder":
         """
         Use USB sensor with matching serial number.
 
@@ -105,7 +105,7 @@ class DracalCmdBuilder:
         self.cmd += f" -s {serial_number.strip()}"
 
     @builder_method
-    def use_first_sensor(self) -> None:
+    def use_first_sensor(self) -> "DracalCmdBuilder":
         """
         Use the "first sensor encountered".
 
@@ -134,7 +134,7 @@ class DracalCmdBuilder:
         return True
 
     @builder_method
-    def use_channels(self, channels: list[int] = None, use_first_sensor: bool = True) -> None:
+    def use_channels(self, channels: list[int] = None, use_first_sensor: bool = True) -> "DracalCmdBuilder":
         """
         Use specific channel(s) id(s).
 
@@ -166,7 +166,7 @@ class DracalCmdBuilder:
         self.cmd += (" -i " + ",".join(str(channel) for channel in channels))
 
     @builder_method
-    def use_all_channels(self, use_first_sensor: bool = True):
+    def use_all_channels(self, use_first_sensor: bool = True) -> "DracalCmdBuilder":
         """
         Use all available channels for a given sensor.
 
@@ -188,7 +188,7 @@ class DracalCmdBuilder:
         self.cmd += " -i a"
 
     @builder_method
-    def retries(self, num_retries: int):
+    def retries(self, num_retries: int) -> "DracalCmdBuilder":
         """
         If a USB command fails, retry it some number of times before bailing out.
 
@@ -201,7 +201,7 @@ class DracalCmdBuilder:
 
     # *** FORMATTING ***
     @builder_method
-    def num_decimals(self, num: int) -> None:
+    def num_decimals(self, num: int) -> "DracalCmdBuilder":
         """
         Set number of fractional digits displayed in output.
 
@@ -222,7 +222,7 @@ class DracalCmdBuilder:
         self.cmd += f" -x {num}"
 
     @builder_method
-    def ascii_output(self):
+    def ascii_output(self) -> "DracalCmdBuilder":
         """
         Use 7-bit ASCII output (no Unicode degree symbols).
 
@@ -231,7 +231,7 @@ class DracalCmdBuilder:
         self.cmd += " -7"
 
     @builder_method
-    def pretty_output(self):
+    def pretty_output(self) -> "DracalCmdBuilder":
         """
         Enable pretty output.
 
@@ -244,7 +244,8 @@ class DracalCmdBuilder:
     _DEFAULT_NUM_MEASUREMENTS = 10
 
     @builder_method
-    def log_to_file(self, file: str | Path, num_measurements: int = _DEFAULT_NUM_MEASUREMENTS, recording_frequency_ms: int = None):
+    def log_to_file(self, file: str | Path, *, num_measurements: int = _DEFAULT_NUM_MEASUREMENTS,
+                    recording_frequency_ms: int = None) -> "DracalCmdBuilder":
         """
         Log recorded data to a file in .csv format.
 
@@ -269,7 +270,7 @@ class DracalCmdBuilder:
         self.cmd += logging_cmd
 
     # Does not need command builder decorator since this calls log_to_file
-    def log_for_duration(self, file: str | Path, duration_sec: float, num_measurements: int = _DEFAULT_NUM_MEASUREMENTS,
+    def log_for_duration(self, file: str | Path, duration_sec: float, *, num_measurements: int = _DEFAULT_NUM_MEASUREMENTS,
                          recording_frequency_ms: int = None):
         """
         Log data recorded for a given duration to a file in .csv format.
@@ -299,11 +300,11 @@ class DracalCmdBuilder:
         else:
             recording_frequency_ms = int(num_measurements // duration_ms)
 
-        return self.log_to_file(file, num_measurements, recording_frequency_ms)
+        return self.log_to_file(file, num_measurements=num_measurements, recording_frequency_ms=recording_frequency_ms)
 
     # *** BUILDER META ***
     @builder_method
-    def reset(self) -> None:
+    def reset(self) -> "DracalCmdBuilder":
         """Reset the command to prepare for a new command."""
         self.cmd = self._base_command
         self.logger.debug("Command was reset")
