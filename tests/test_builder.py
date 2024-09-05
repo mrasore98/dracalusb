@@ -1,3 +1,6 @@
+import shlex
+from unittest.mock import patch
+
 import pytest
 
 from dracalusb.builder import DracalCmdBuilder
@@ -65,7 +68,6 @@ class TestDracalCmdBuilder:
         cmd_builder.num_decimals(7)
         assert expected_cmd == cmd_builder.cmd
 
-
     def test_retries(self, cmd_builder):
         cmd_builder.retries(4)
         assert cmd_builder.cmd == "dracal-usb-get -R 4"
@@ -90,16 +92,41 @@ class TestDracalCmdBuilder:
         cmd_builder.log_to_file("my_log.txt", recording_frequency_ms=100)
         assert cmd_builder.cmd == "dracal-usb-get -L my_log.txt -r 10 -I 100"
 
-    @pytest.mark.skip(reason="Not implemented yet")
     def test_log_to_file_duration(self, cmd_builder):
-        pass
+        cmd_builder.log_for_duration("-", 30, num_measurements=15)
+        assert cmd_builder.cmd == "dracal-usb-get -L - -r 15 -I 2000"
+        cmd_builder.reset()
+        cmd_builder.log_for_duration("file.csv", 20, recording_frequency_ms=4000)
+        assert cmd_builder.cmd == "dracal-usb-get -L file.csv -r 5 -I 4000"
+
+    def test_units(self, cmd_builder):
+        cmd_builder.temperature_units(DracalCmdBuilder.units.temperature.F)
+        cmd_builder.pressure_units(DracalCmdBuilder.units.pressure.ATM)
+        cmd_builder.length_units(DracalCmdBuilder.units.length.CENTI_METER)
+        cmd_builder.frequency_units(DracalCmdBuilder.units.frequency.RPM)
+        cmd_builder.concentration_units(DracalCmdBuilder.units.concentration.PPB)
+        assert cmd_builder.cmd == "dracal-usb-get -T F -P atm -M cm -F rpm -C ppb"
+
+    def test_enable_option(self, cmd_builder):
+        cmd_builder.enable_option(DracalCmdBuilder.options.LEGACY_ERRORS)
+        cmd_builder.enable_option(DracalCmdBuilder.options.NO_HUMIDEX_RANGE)
+        cmd_builder.enable_option(DracalCmdBuilder.options.NO_HEAT_INDEX_RANGE)
+        assert cmd_builder.cmd == "dracal-usb-get -o legacy_errors -o no_humidex_range -o no_heat_index_range"
 
     def test_reset(self, cmd_builder):
         cmd_builder.cmd = "NONSENSE STRING"
         cmd_builder.reset()
         assert cmd_builder.cmd == "dracal-usb-get"
 
-    @pytest.mark.skip(reason="Not implemented yet")
     def test_execute(self, cmd_builder):
-        pass
+        cmd_builder.cmd = "dracal-usb-get -f -i 0,1 -x 2"
+        expected_args = shlex.split(cmd_builder.cmd)
+        with patch("subprocess.check_output") as mock_check_output:
+            mock_check_output.return_value = "25.04, 40.02\r\n".encode()
+
+            result = cmd_builder.execute()
+
+            mock_check_output.assert_called_with(expected_args)
+            assert result == "25.04, 40.02"
+            assert cmd_builder.cmd == "dracal-usb-get"
 

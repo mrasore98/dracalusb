@@ -70,6 +70,18 @@ class DracalConcentrationUnits(StrEnum):
     PPM = "ppm"  # parts per million
     PERCENT = "percent"
 
+class DracalUnits:
+    temperature = DracalTempUnits
+    pressure = DracalPressureUnits
+    length = DracalLengthUnits
+    frequency = DracalFrequencyUnits
+    concentration = DracalConcentrationUnits
+
+class DracalOptions(StrEnum):
+    NO_HUMIDEX_RANGE = "no_humidex_range"  # Calculate humidex even if input values are out of range.
+    NO_HEAT_INDEX_RANGE = "no_heat_index_range"  # Calculate heat index even if input values are out of range.
+    LEGACY_ERRORS = "legacy_errors"  # Output channels errors in old (unspecific) way. For instance: "err" instead of "ProbeDisconnected"
+
 
 class DracalCmdBuilder:
     """
@@ -78,6 +90,9 @@ class DracalCmdBuilder:
     Based on documentation from https://www.dracal.com/en/dracal-usb-get_howto/ for v3.2.1 updated 04-05-2023.
     """
     _base_command = "dracal-usb-get"
+    units = DracalUnits
+    options = DracalOptions
+
 
     def __init__(self, serial_number: str = None):
         self.cmd = self._base_command
@@ -91,7 +106,7 @@ class DracalCmdBuilder:
     def __str__(self):
         return self.cmd
 
-    # *** DATA SELECTION ***
+    # *** DATA ACQUISITION ***
     @builder_method
     def use_sensor(self, serial_number: str) -> "DracalCmdBuilder":
         """
@@ -295,12 +310,79 @@ class DracalCmdBuilder:
                               f"Setting to {self._DEFAULT_NUM_MEASUREMENTS}")
             num_measurements = self._DEFAULT_NUM_MEASUREMENTS
 
-        if recording_frequency_ms:
+        if recording_frequency_ms is not None:
             num_measurements = int(duration_ms // recording_frequency_ms)
         else:
-            recording_frequency_ms = int(num_measurements // duration_ms)
+            recording_frequency_ms = int(duration_ms // num_measurements)
 
         return self.log_to_file(file, num_measurements=num_measurements, recording_frequency_ms=recording_frequency_ms)
+
+    # *** UNITS ***
+    @builder_method
+    def temperature_units(self, units: DracalTempUnits) -> "DracalCmdBuilder":
+        """
+        Select the temperature unit to use.
+
+        Adds `-T <units>` to the command.
+
+        :param units: The temperature unit to use.
+        """
+        self.cmd += f" -T {units!s}"
+
+    @builder_method
+    def pressure_units(self, units: DracalPressureUnits) -> "DracalCmdBuilder":
+        """
+        Select the pressure unit to use.
+
+        Adds `-P <units>` to the command.
+
+        :param units: The pressure unit to use.
+        """
+        self.cmd += f" -P {units!s}"
+
+    @builder_method
+    def frequency_units(self, units: DracalFrequencyUnits) -> "DracalCmdBuilder":
+        """
+        Select the frequency unit to use.
+
+        Adds `-F <units>` to the command.
+
+        :param units: The frequency unit to use.
+        """
+        self.cmd += f" -F {units!s}"
+
+    @builder_method
+    def length_units(self, units: DracalLengthUnits) -> "DracalCmdBuilder":
+        """
+        Select the length unit to use.
+
+        Adds `-M <units>` to the command.
+
+        :param units: The length unit to use.
+        """
+        self.cmd += f" -M {units!s}"
+
+    @builder_method
+    def concentration_units(self, units: DracalConcentrationUnits) -> "DracalCmdBuilder":
+        """
+        Select the concentration unit to use.
+
+        Adds `-C <units>` to the command.
+
+        :param units: The concentration unit to use.
+        """
+        self.cmd += f" -C {units!s}"
+
+    @builder_method
+    def enable_option(self, option: DracalOptions) -> "DracalCmdBuilder":
+        """
+        Enable specified option.
+
+        Adds `-o <option>` to the command. You may use `-o` multiple times.
+
+        :param option: The option to enable.
+        """
+        self.cmd += f" -o {option!s}"
 
     # *** BUILDER META ***
     @builder_method
