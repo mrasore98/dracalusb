@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dracalusb"
-version = "0.1.0"
+version = "0.1.3a0"
 description = "Python wrapper for `dracal-usb-get` command line utility from Dracal Technologies."
 authors = ["Mathias Alexander <mathias.alexander@irhythmtech.com>"]
 readme = "README.md"

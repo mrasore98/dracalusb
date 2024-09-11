@@ -1,6 +1,7 @@
 import logging
 import shlex
 import subprocess
+from collections.abc import Sequence
 from enum import StrEnum
 from pathlib import Path
 
@@ -149,7 +150,7 @@ class DracalCmdBuilder:
         return True
 
     @builder_method
-    def use_channels(self, channels: list[int] = None, use_first_sensor: bool = True) -> "DracalCmdBuilder":
+    def use_channels(self, channels: Sequence[int] = None, use_first_sensor: bool = True) -> "DracalCmdBuilder":
         """
         Use specific channel(s) id(s).
 
