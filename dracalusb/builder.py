@@ -6,6 +6,10 @@ from enum import StrEnum
 from pathlib import Path
 
 
+class DracalUsbError(IOError):
+    pass
+
+
 def builder_method(func):
     """
     Decorator to enable restoring previous commands and method chaining with DracalCmdBuilder.
@@ -393,7 +397,11 @@ class DracalCmdBuilder:
         self.logger.debug("Command was reset")
 
     def execute(self) -> str:
-        """Run the built command and return the output."""
+        """
+        Run the built command and return the output.
+
+        :raise: DracalUsbError if the command fails.
+        """
         output = None
         args = shlex.split(self.cmd)
         try:
@@ -402,7 +410,7 @@ class DracalCmdBuilder:
             self.reset()
         except subprocess.CalledProcessError as e:
             self.logger.exception(e)
-            raise
+            raise DracalUsbError from e
         return output.decode("utf-8").strip()
 
     def _restore_previous(self):
